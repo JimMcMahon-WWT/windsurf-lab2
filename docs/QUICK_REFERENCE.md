@@ -113,6 +113,18 @@ Invoke-RestMethod -Uri "http://localhost:3000/api/v1/tasks?page=1&limit=20&statu
   -Headers @{ Authorization = "Bearer $token" }
 ```
 
+### List Tasks with Multiple Sorts
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/api/v1/tasks?sortBy=dueDate,-priority,title" `
+  -Headers @{ Authorization = "Bearer $token" }
+```
+
+### List Tasks with Field Projection
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/api/v1/tasks?fields=title,priority,dueDate,createdAt" `
+  -Headers @{ Authorization = "Bearer $token" }
+```
+
 ### Create Task
 ```powershell
 $body = @{

@@ -208,11 +208,22 @@ All responses follow this structure:
 | `isArchived` | boolean | false | Show archived tasks |
 | `dueDateFrom` | date | - | Filter tasks due after this date (ISO 8601) |
 | `dueDateTo` | date | - | Filter tasks due before this date (ISO 8601) |
-| `sortBy` | string | -createdAt | Sort field (prefix with - for descending) |
+| `sortBy` | string | -createdAt | Sort by one or more fields. Prefix with `-` for descending. Allowed fields: `createdAt`, `updatedAt`, `dueDate`, `priority`, `status`, `title`. Multiple fields comma-separated, e.g. `-dueDate,priority`. |
+| `fields` | string | (default set) | Comma-separated list of fields to include in list view. Allowed: `title`, `status`, `priority`, `dueDate`, `createdBy`, `assignedTo`, `category`, `tags`, `isArchived`, `createdAt`, `updatedAt`. Unrecognized fields are ignored. |
 
 **Example Request:**
 ```http
 GET /api/v1/tasks?page=1&limit=20&status=todo&priority=high&sortBy=-dueDate
+```
+
+**Example: Multiple sorts**
+```http
+GET /api/v1/tasks?sortBy=dueDate,-priority,title
+```
+
+**Example: Fields projection**
+```http
+GET /api/v1/tasks?fields=title,priority,dueDate,createdAt
 ```
 
 **Response:** `200 OK`

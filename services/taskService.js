@@ -24,6 +24,7 @@ class TaskService {
       dueDateFrom,
       dueDateTo,
       sortBy = '-createdAt',
+      fields,
       page = 1,
       limit = 10
     } = filters;
@@ -79,14 +80,51 @@ class TaskService {
     const limitNum = parseInt(limit, 10);
     const skip = (pageNum - 1) * limitNum;
 
+    // Whitelist and sanitize sort fields
+    const allowedSortFields = new Set([
+      'createdAt', 'updatedAt', 'dueDate', 'priority', 'status', 'title'
+    ]);
+    const normalizeSort = (raw) => {
+      if (!raw || typeof raw !== 'string') return '-createdAt';
+      const parts = raw.split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .map(s => {
+          const dir = s.startsWith('-') ? '-' : (s.startsWith('+') ? '' : '');
+          const field = s.replace(/^[-+]/, '');
+          return { dir: dir === '-' ? -1 : 1, field };
+        })
+        .filter(({ field }) => allowedSortFields.has(field));
+      if (parts.length === 0) return '-createdAt';
+      // Convert back to mongoose sort object to avoid arbitrary input
+      const sortObj = {};
+      parts.forEach(({ field, dir }) => { sortObj[field] = dir; });
+      return sortObj;
+    };
+
+    const sanitizedSort = normalizeSort(sortBy);
+
     // Execute query with pagination
     const listProjection = 'title status priority dueDate createdBy assignedTo category tags isArchived createdAt updatedAt';
+    const allowedFieldSet = new Set(listProjection.split(/\s+/));
+
+    const sanitizeFields = (raw) => {
+      if (!raw || typeof raw !== 'string') return listProjection;
+      const picked = raw.split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .filter(f => allowedFieldSet.has(f));
+      if (picked.length === 0) return listProjection;
+      return picked.join(' ');
+    };
+
+    const projection = sanitizeFields(fields);
 
     const [tasks, total] = await Promise.all([
       Task.find(query)
-        .select(listProjection)
+        .select(projection)
         .populate('assignedTo', 'name email username avatar')
-        .sort(sortBy)
+        .sort(sanitizedSort)
         .skip(skip)
         .limit(limitNum)
         .lean(),

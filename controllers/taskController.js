@@ -22,8 +22,8 @@ class TaskController {
   // @access  Private
   async getTasks(req, res, next) {
     try {
-      const { status, priority, sortBy } = req.query;
-      const tasks = await taskService.getTasks(req.user._id, { status, priority, sortBy });
+      const { status, priority, sortBy, category, tags } = req.query;
+      const tasks = await taskService.getTasks(req.user._id, { status, priority, sortBy, category, tags });
 
       res.status(200).json({
         success: true,

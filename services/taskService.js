@@ -6,7 +6,7 @@ class TaskService {
   async createTask(userId, taskData) {
     const task = await Task.create({
       ...taskData,
-      user: userId
+      createdBy: userId
     });
 
     return task;
@@ -14,9 +14,9 @@ class TaskService {
 
   // Get all tasks for a user
   async getTasks(userId, filters = {}) {
-    const { status, priority, sortBy = '-createdAt' } = filters;
+    const { status, priority, sortBy = '-createdAt', category, tags } = filters;
 
-    const query = { user: userId };
+    const query = { createdBy: userId, isArchived: false };
 
     if (status) {
       query.status = status;
@@ -26,14 +26,26 @@ class TaskService {
       query.priority = priority;
     }
 
-    const tasks = await Task.find(query).sort(sortBy);
+    if (category) {
+      query.category = category;
+    }
+
+    if (tags) {
+      query.tags = { $in: Array.isArray(tags) ? tags : [tags] };
+    }
+
+    const tasks = await Task.find(query)
+      .populate('assignedTo', 'name email username avatar')
+      .sort(sortBy);
 
     return tasks;
   }
 
   // Get a single task by ID
   async getTaskById(userId, taskId) {
-    const task = await Task.findOne({ _id: taskId, user: userId });
+    const task = await Task.findOne({ _id: taskId, createdBy: userId })
+      .populate('createdBy', 'name email username avatar')
+      .populate('assignedTo', 'name email username avatar');
 
     if (!task) {
       throw ApiError.notFound('Task not found');
@@ -44,7 +56,7 @@ class TaskService {
 
   // Update a task
   async updateTask(userId, taskId, updateData) {
-    const task = await Task.findOne({ _id: taskId, user: userId });
+    const task = await Task.findOne({ _id: taskId, createdBy: userId });
 
     if (!task) {
       throw ApiError.notFound('Task not found');
@@ -58,7 +70,7 @@ class TaskService {
 
   // Delete a task
   async deleteTask(userId, taskId) {
-    const task = await Task.findOne({ _id: taskId, user: userId });
+    const task = await Task.findOne({ _id: taskId, createdBy: userId });
 
     if (!task) {
       throw ApiError.notFound('Task not found');
@@ -71,29 +83,8 @@ class TaskService {
 
   // Get task statistics
   async getTaskStats(userId) {
-    const stats = await Task.aggregate([
-      { $match: { user: userId } },
-      {
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 }
-        }
-      }
-    ]);
-
-    const result = {
-      total: 0,
-      todo: 0,
-      'in-progress': 0,
-      completed: 0
-    };
-
-    stats.forEach(stat => {
-      result[stat._id] = stat.count;
-      result.total += stat.count;
-    });
-
-    return result;
+    // Use the static method from Task model
+    return await Task.getStatistics(userId);
   }
 }
 

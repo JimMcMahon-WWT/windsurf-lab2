@@ -20,16 +20,25 @@ class AuthService {
 
   // Register new user
   async register(userData) {
-    const { name, email, password } = userData;
+    const { username, name, email, password } = userData;
 
     // Check if user already exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }]
+    });
+    
     if (existingUser) {
-      throw ApiError.conflict('User already exists with this email');
+      if (existingUser.email === email) {
+        throw ApiError.conflict('User already exists with this email');
+      }
+      if (existingUser.username === username) {
+        throw ApiError.conflict('Username is already taken');
+      }
     }
 
     // Create user
     const user = await User.create({
+      username,
       name,
       email,
       password
@@ -51,19 +60,39 @@ class AuthService {
   }
 
   // Login user
-  async login(email, password) {
-    // Find user with password field
-    const user = await User.findOne({ email }).select('+password');
+  async login(identifier, password) {
+    // Find user by email or username with password field
+    const user = await User.findOne({
+      $or: [
+        { email: identifier.toLowerCase() },
+        { username: identifier.toLowerCase() }
+      ]
+    }).select('+password +loginAttempts +lockUntil');
 
     if (!user) {
       throw ApiError.unauthorized('Invalid credentials');
     }
 
+    // Check if account is locked
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      throw ApiError.forbidden('Account is temporarily locked due to too many failed login attempts. Please try again later.');
+    }
+
     // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
+      // Increment login attempts
+      await user.incLoginAttempts();
       throw ApiError.unauthorized('Invalid credentials');
     }
+
+    // Reset login attempts on successful login
+    if (user.loginAttempts > 0 || user.lockUntil) {
+      await user.resetLoginAttempts();
+    }
+
+    // Update last login
+    user.lastLogin = new Date();
 
     // Generate tokens
     const token = this.generateToken(user._id);

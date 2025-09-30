@@ -26,8 +26,10 @@ class AuthController {
   // @access  Public
   async login(req, res, next) {
     try {
-      const { email, password } = req.body;
-      const { user, token, refreshToken } = await authService.login(email, password);
+      const { identifier, email, password } = req.body;
+      // Support both 'identifier' (new) and 'email' (legacy) fields
+      const loginIdentifier = identifier || email;
+      const { user, token, refreshToken } = await authService.login(loginIdentifier, password);
 
       res.status(200).json({
         success: true,

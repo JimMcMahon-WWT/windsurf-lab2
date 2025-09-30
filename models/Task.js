@@ -133,6 +133,9 @@ const taskSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
+// Minimal fields needed for list/search views
+const TASK_LIST_PROJECTION = 'title status priority dueDate createdBy assignedTo category tags isArchived createdAt updatedAt';
+
 // ==========================================
 // INDEXES
 // ==========================================
@@ -329,7 +332,10 @@ taskSchema.statics.findOverdue = function(userId) {
     dueDate: { $lt: new Date() },
     status: { $nin: ['completed', 'cancelled'] },
     isArchived: false
-  }).sort({ dueDate: 1 });
+  })
+    .select(TASK_LIST_PROJECTION)
+    .sort({ dueDate: 1 })
+    .lean();
 };
 
 /**
@@ -347,7 +353,10 @@ taskSchema.statics.findDueSoon = function(userId, hours = 24) {
     dueDate: { $gte: new Date(), $lte: threshold },
     status: { $nin: ['completed', 'cancelled'] },
     isArchived: false
-  }).sort({ dueDate: 1 });
+  })
+    .select(TASK_LIST_PROJECTION)
+    .sort({ dueDate: 1 })
+    .lean();
 };
 
 /**
@@ -361,7 +370,10 @@ taskSchema.statics.searchTasks = function(userId, searchText) {
     createdBy: userId,
     $text: { $search: searchText },
     isArchived: false
-  }).sort({ score: { $meta: 'textScore' } });
+  })
+    .select(TASK_LIST_PROJECTION)
+    .sort({ score: { $meta: 'textScore' } })
+    .lean();
 };
 
 /**

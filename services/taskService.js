@@ -80,8 +80,11 @@ class TaskService {
     const skip = (pageNum - 1) * limitNum;
 
     // Execute query with pagination
+    const listProjection = 'title status priority dueDate createdBy assignedTo category tags isArchived createdAt updatedAt';
+
     const [tasks, total] = await Promise.all([
       Task.find(query)
+        .select(listProjection)
         .populate('assignedTo', 'name email username avatar')
         .sort(sortBy)
         .skip(skip)
@@ -110,9 +113,33 @@ class TaskService {
 
   // Get a single task by ID
   async getTaskById(userId, taskId) {
+    const detailProjection = [
+      'title',
+      'description',
+      'status',
+      'priority',
+      'dueDate',
+      'startDate',
+      'completedAt',
+      'createdBy',
+      'assignedTo',
+      'tags',
+      'category',
+      'estimatedTime',
+      'actualTime',
+      'attachments',
+      'subtasks',
+      'notes',
+      'isArchived',
+      'createdAt',
+      'updatedAt'
+    ].join(' ');
+
     const task = await Task.findOne({ _id: taskId, createdBy: userId })
+      .select(detailProjection)
       .populate('createdBy', 'name email username avatar')
-      .populate('assignedTo', 'name email username avatar');
+      .populate('assignedTo', 'name email username avatar')
+      .lean();
 
     if (!task) {
       throw ApiError.notFound('Task not found');

@@ -16,8 +16,7 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     minlength: [3, 'Username must be at least 3 characters long'],
     maxlength: [30, 'Username cannot exceed 30 characters'],
-    match: [/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and hyphens'],
-    index: true
+    match: [/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores, and hyphens']
   },
   name: {
     type: String,
@@ -32,8 +31,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
     trim: true,
-    match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address'],
-    index: true
+    match: [/^\S+@\S+\.\S+$/, 'Please provide a valid email address']
   },
 
   // Authentication
@@ -131,8 +129,6 @@ const userSchema = new mongoose.Schema({
 // ==========================================
 // INDEXES
 // ==========================================
-userSchema.index({ email: 1 }, { unique: true });
-userSchema.index({ username: 1 }, { unique: true });
 userSchema.index({ isActive: 1, createdAt: -1 });
 userSchema.index({ lastLogin: -1 });
 

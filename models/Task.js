@@ -11,8 +11,7 @@ const taskSchema = new mongoose.Schema({
     required: [true, 'Task title is required'],
     trim: true,
     minlength: [1, 'Title cannot be empty'],
-    maxlength: [200, 'Title cannot exceed 200 characters'],
-    index: true
+    maxlength: [200, 'Title cannot exceed 200 characters']
   },
   description: {
     type: String,
@@ -28,8 +27,7 @@ const taskSchema = new mongoose.Schema({
       values: ['todo', 'in-progress', 'completed', 'cancelled'],
       message: '{VALUE} is not a valid status'
     },
-    default: 'todo',
-    index: true
+    default: 'todo'
   },
   priority: {
     type: String,
@@ -37,24 +35,13 @@ const taskSchema = new mongoose.Schema({
       values: ['low', 'medium', 'high', 'urgent'],
       message: '{VALUE} is not a valid priority'
     },
-    default: 'medium',
-    index: true
+    default: 'medium'
   },
 
   // Dates
   dueDate: {
     type: Date,
-    default: null,
-    validate: {
-      validator: function(value) {
-        // Due date should be in the future for new tasks
-        if (this.isNew && value) {
-          return value >= new Date();
-        }
-        return true;
-      },
-      message: 'Due date must be in the future'
-    }
+    default: null
   },
   startDate: {
     type: Date,
@@ -133,8 +120,7 @@ const taskSchema = new mongoose.Schema({
   // Metadata
   isArchived: {
     type: Boolean,
-    default: false,
-    index: true
+    default: false
   },
   notes: {
     type: String,

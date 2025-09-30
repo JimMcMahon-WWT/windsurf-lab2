@@ -53,8 +53,8 @@ const validatePasswordStrength = (password) => {
     errors.push('Password is too common. Please choose a more unique password');
   }
   
-  // Check for sequential characters
-  if (/(?:abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz|012|123|234|345|456|567|678|789)/i.test(password)) {
+  // Check for sequential characters (4 or more in a row)
+  if (/(?:abcd|bcde|cdef|defg|efgh|fghi|ghij|hijk|ijkl|jklm|klmn|lmno|mnop|nopq|opqr|pqrs|qrst|rstu|stuv|tuvw|uvwx|vwxy|wxyz|0123|1234|2345|3456|4567|5678|6789)/i.test(password)) {
     errors.push('Password should not contain sequential characters');
   }
   

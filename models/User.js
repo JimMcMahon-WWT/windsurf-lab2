@@ -62,8 +62,7 @@ const userSchema = new mongoose.Schema({
   // Account Status
   isActive: {
     type: Boolean,
-    default: true,
-    index: true
+    default: true
   },
   isEmailVerified: {
     type: Boolean,

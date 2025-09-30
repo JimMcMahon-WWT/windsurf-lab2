@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const { verifyAccessToken } = require('../utils/jwt');
 const config = require('../config/config');
 const ApiError = require('../utils/apiError');
 const User = require('../models/User');
@@ -25,7 +25,7 @@ const protect = async (req, res, next) => {
 
     try {
       // Verify token
-      const decoded = jwt.verify(token, config.jwt.secret);
+      const decoded = verifyAccessToken(token);
 
       // Get user from token (exclude sensitive fields)
       req.user = await User.findById(decoded.id).select('+passwordChangedAt');
@@ -94,7 +94,7 @@ const optionalAuth = async (req, res, next) => {
 
     if (token) {
       try {
-        const decoded = jwt.verify(token, config.jwt.secret);
+        const decoded = verifyAccessToken(token);
         req.user = await User.findById(decoded.id);
       } catch (error) {
         // Token invalid, but continue without user

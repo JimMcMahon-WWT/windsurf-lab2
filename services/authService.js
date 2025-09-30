@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../utils/jwt');
 const config = require('../config/config');
 const User = require('../models/User');
 const ApiError = require('../utils/apiError');
@@ -6,16 +6,12 @@ const ApiError = require('../utils/apiError');
 class AuthService {
   // Generate JWT token
   generateToken(userId) {
-    return jwt.sign({ id: userId }, config.jwt.secret, {
-      expiresIn: config.jwt.expiresIn
-    });
+    return signAccessToken(userId);
   }
 
   // Generate refresh token
   generateRefreshToken(userId) {
-    return jwt.sign({ id: userId }, config.jwt.refreshSecret, {
-      expiresIn: config.jwt.refreshExpiresIn
-    });
+    return signRefreshToken(userId);
   }
 
   // Register new user
@@ -115,7 +111,7 @@ class AuthService {
   // Refresh access token
   async refreshToken(refreshToken) {
     try {
-      const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
+      const decoded = verifyRefreshToken(refreshToken);
       
       const user = await User.findById(decoded.id).select('+refreshToken');
       

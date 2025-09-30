@@ -17,8 +17,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Logging middleware
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
+const config = require('./config/config');
+if (config.server.isDevelopment) {
+  app.use(morgan(config.logging.format));
 }
 
 // Health check route

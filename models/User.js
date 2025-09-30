@@ -38,7 +38,7 @@ userSchema.pre('save', async function(next) {
     return next();
   }
   
-  this.password = await bcrypt.hash(this.password, config.bcrypt.rounds);
+  this.password = await bcrypt.hash(this.password, config.security.bcryptRounds);
   next();
 });
 

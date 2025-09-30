@@ -5,10 +5,12 @@ const config = require('./config/config');
 // Connect to MongoDB
 connectDB();
 
-const PORT = config.port || 3000;
+const PORT = config.server.port;
 
 const server = app.listen(PORT, () => {
-  console.log(`Server running in ${config.nodeEnv} mode on port ${PORT}`);
+  console.log(`🚀 Server running in ${config.server.env} mode on port ${PORT}`);
+  console.log(`   API Version: ${config.server.apiVersion}`);
+  console.log(`   Access: http://localhost:${PORT}`);
 });
 
 // Handle unhandled promise rejections

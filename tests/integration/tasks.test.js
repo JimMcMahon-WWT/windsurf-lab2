@@ -219,7 +219,8 @@ describe('Task Integration Tests', () => {
     it('should fail with invalid task ID', async () => {
       const response = await authenticatedRequest('get', '/api/v1/tasks/invalid_id', token);
 
-      expect(response.status).toBe(500); // CastError
+      expect(response.status).toBe(404); // CastError converted to 404
+      expect(response.body.message).toContain('not found');
     });
 
     it('should fail with non-existent task ID', async () => {

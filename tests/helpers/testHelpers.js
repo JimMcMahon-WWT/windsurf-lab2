@@ -7,8 +7,15 @@ const { validUser, validUser2 } = require('./testData');
 /**
  * Create a test user and return user object with token
  */
-const createTestUser = async (userData = validUser) => {
-  const user = await User.create(userData);
+const createTestUser = async (userData) => {
+  // Generate unique user data if not provided
+  const uniqueData = userData || {
+    ...validUser,
+    username: `testuser${Date.now()}${Math.random().toString(36).substr(2, 9)}`,
+    email: `test${Date.now()}${Math.random().toString(36).substr(2, 9)}@example.com`
+  };
+  
+  const user = await User.create(uniqueData);
   const authService = require('../../services/authService');
   const token = authService.generateToken(user._id);
   

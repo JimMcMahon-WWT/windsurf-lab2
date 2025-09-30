@@ -5,23 +5,38 @@ const { validUser, validUser2, invalidUsers } = require('../helpers/testData');
 const { registerUser, loginUser, wait } = require('../helpers/testHelpers');
 
 describe('Authentication Integration Tests', () => {
+  // Use unique emails for each test to avoid conflicts
+  let testCounter = 0;
+  
+  const getUniqueUser = () => ({
+    ...validUser,
+    username: `testuser${Date.now()}${testCounter}`,
+    email: `test${Date.now()}${testCounter}@example.com`
+  });
+  
+  beforeEach(() => {
+    testCounter++;
+  });
+
   describe('POST /api/v1/auth/register', () => {
     it('should register a new user successfully', async () => {
-      const response = await registerUser(validUser);
+      const uniqueUser = getUniqueUser();
+      const response = await registerUser(uniqueUser);
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
       expect(response.body.data.user).toBeDefined();
-      expect(response.body.data.user.username).toBe(validUser.username);
-      expect(response.body.data.user.email).toBe(validUser.email);
+      expect(response.body.data.user.username).toBe(uniqueUser.username);
+      expect(response.body.data.user.email).toBe(uniqueUser.email);
       expect(response.body.data.user.password).toBeUndefined();
       expect(response.body.data.token).toBeDefined();
       expect(response.body.data.refreshToken).toBeDefined();
     });
 
     it('should fail with duplicate email', async () => {
-      await registerUser(validUser);
-      const response = await registerUser(validUser);
+      const uniqueUser = getUniqueUser();
+      await registerUser(uniqueUser);
+      const response = await registerUser(uniqueUser);
 
       expect(response.status).toBe(409);
       expect(response.body.success).toBe(false);
@@ -42,14 +57,22 @@ describe('Authentication Integration Tests', () => {
     });
 
     it('should fail with invalid email', async () => {
-      const response = await registerUser(invalidUsers.invalidEmail);
+      const uniqueUser = getUniqueUser();
+      const response = await registerUser({
+        ...uniqueUser,
+        email: 'invalid-email'
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
 
     it('should fail with weak password', async () => {
-      const response = await registerUser(invalidUsers.weakPassword);
+      const uniqueUser = getUniqueUser();
+      const response = await registerUser({
+        ...uniqueUser,
+        password: 'weak'
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -57,39 +80,54 @@ describe('Authentication Integration Tests', () => {
     });
 
     it('should fail without uppercase in password', async () => {
-      const response = await registerUser(invalidUsers.noUppercase);
+      const uniqueUser = getUniqueUser();
+      const response = await registerUser({
+        ...uniqueUser,
+        password: 'securepass123!'
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
 
     it('should fail without number in password', async () => {
-      const response = await registerUser(invalidUsers.noNumber);
+      const uniqueUser = getUniqueUser();
+      const response = await registerUser({
+        ...uniqueUser,
+        password: 'SecurePass!'
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
 
     it('should fail without special character in password', async () => {
-      const response = await registerUser(invalidUsers.noSpecialChar);
+      const uniqueUser = getUniqueUser();
+      const response = await registerUser({
+        ...uniqueUser,
+        password: 'SecurePass123'
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
     });
 
     it('should convert email to lowercase', async () => {
+      const uniqueUser = getUniqueUser();
+      const upperEmail = uniqueUser.email.toUpperCase();
       const response = await registerUser({
-        ...validUser,
-        email: 'TEST@EXAMPLE.COM'
+        ...uniqueUser,
+        email: upperEmail
       });
 
       expect(response.status).toBe(201);
-      expect(response.body.data.user.email).toBe(`test${testCounter}@example.com`);
+      expect(response.body.data.user.email).toBe(uniqueUser.email.toLowerCase());
     });
 
     it('should hash password', async () => {
-      await registerUser(validUser);
-      const user = await User.findOne({ email: validUser.email }).select('+password');
+      const uniqueUser = getUniqueUser();
+      await registerUser(uniqueUser);
+      const user = await User.findOne({ email: uniqueUser.email }).select('+password');
 
       expect(user.password).not.toBe(uniqueUser.password);
       expect(user.password).toMatch(/^\$2[aby]\$/);
@@ -105,7 +143,7 @@ describe('Authentication Integration Tests', () => {
     });
 
     it('should login with username', async () => {
-      const response = await loginUser(validUser.username, validUser.password);
+      const response = await loginUser(currentUser.username, currentUser.password);
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -218,8 +256,9 @@ describe('Authentication Integration Tests', () => {
     let refreshToken;
 
     beforeEach(async () => {
-      const response = await registerUser(validUser);
-      refreshToken = response.body.data.refreshToken;
+      const uniqueUser = getUniqueUser();
+      const response = await registerUser(uniqueUser);
+      refreshToken = response.body?.data?.refreshToken;
     });
 
     it('should refresh access token with valid refresh token', async () => {

@@ -1,4 +1,16 @@
 const Joi = require('joi');
+const { validatePasswordStrength } = require('./passwordValidator');
+
+// Custom Joi validator for strong passwords
+const strongPassword = (value, helpers) => {
+  const validation = validatePasswordStrength(value);
+  
+  if (!validation.isValid) {
+    return helpers.error('password.weak', { errors: validation.errors });
+  }
+  
+  return value;
+};
 
 // User validation schemas
 const registerSchema = Joi.object({
@@ -14,7 +26,16 @@ const registerSchema = Joi.object({
     }),
   name: Joi.string().min(2).max(50).required(),
   email: Joi.string().email().required(),
-  password: Joi.string().min(6).max(128).required()
+  password: Joi.string()
+    .min(8)
+    .max(128)
+    .custom(strongPassword)
+    .required()
+    .messages({
+      'string.min': 'Password must be at least 8 characters long',
+      'string.max': 'Password cannot exceed 128 characters',
+      'password.weak': '{{#errors}}'
+    })
 });
 
 const loginSchema = Joi.object({

@@ -1,0 +1,380 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Task Management API",
+    "version": "1.0.0",
+    "description": "Comprehensive API documentation for the Task Management API."
+  },
+  "servers": [
+    { "url": "http://localhost:3000/api/v1", "description": "Local" }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "Authentication endpoints" },
+    { "name": "Tasks", "description": "Task management endpoints" }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" },
+              "examples": {
+                "default": {
+                  "value": { "username": "johndoe", "name": "John Doe", "email": "john@example.com", "password": "SecureP@ss123!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "409": { "description": "Conflict", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" },
+              "examples": { "default": { "value": { "identifier": "johndoe", "password": "SecureP@ss123!" } } }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh access token",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/RefreshRequest" } } }
+        },
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TokenOnlyResponse" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "Get current user",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserResponse" } } } },
+          "401": { "description": "Unauthorized", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+
+    "/tasks": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "List tasks (paginated)",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "in": "query", "name": "page", "schema": { "type": "integer", "default": 1 } },
+          { "in": "query", "name": "limit", "schema": { "type": "integer", "default": 10 } },
+          { "in": "query", "name": "status", "schema": { "type": "string", "enum": ["todo","in-progress","completed","cancelled"] } },
+          { "in": "query", "name": "priority", "schema": { "type": "string", "enum": ["low","medium","high","urgent"] } },
+          { "in": "query", "name": "category", "schema": { "type": "string" } },
+          { "in": "query", "name": "tags", "schema": { "type": "string" }, "description": "Comma-separated" },
+          { "in": "query", "name": "search", "schema": { "type": "string" } },
+          { "in": "query", "name": "isArchived", "schema": { "type": "boolean", "default": false } },
+          { "in": "query", "name": "dueDateFrom", "schema": { "type": "string", "format": "date-time" } },
+          { "in": "query", "name": "dueDateTo", "schema": { "type": "string", "format": "date-time" } },
+          { "in": "query", "name": "sortBy", "schema": { "type": "string", "default": "-createdAt" }, "description": "Allowed fields: createdAt, updatedAt, dueDate, priority, status, title. Use '-' for desc, comma for multiple." },
+          { "in": "query", "name": "fields", "schema": { "type": "string" }, "description": "Allowed: title,status,priority,dueDate,createdBy,assignedTo,category,tags,isArchived,createdAt,updatedAt" }
+        ],
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskListResponse" } } } }
+        }
+      },
+      "post": {
+        "tags": ["Tasks"],
+        "summary": "Create task",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskCreate" } } } },
+        "responses": { "201": { "description": "Created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskResponse" } } } } }
+      }
+    },
+
+    "/tasks/{id}": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Get single task",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [ { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskResponse" } } } }, "404": { "description": "Not Found" } }
+      },
+      "put": {
+        "tags": ["Tasks"],
+        "summary": "Update task",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [ { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskUpdate" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskResponse" } } } }, "404": { "description": "Not Found" } }
+      },
+      "delete": {
+        "tags": ["Tasks"],
+        "summary": "Delete task",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [ { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DeleteResponse" } } } }, "404": { "description": "Not Found" } }
+      }
+    },
+
+    "/tasks/stats": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Get task statistics",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StatsResponse" } } } } }
+      }
+    },
+    "/tasks/overdue": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Get overdue tasks",
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskListSimpleResponse" } } } } }
+      }
+    },
+    "/tasks/due-soon": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Get tasks due soon",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [ { "in": "query", "name": "hours", "schema": { "type": "integer", "default": 24 } } ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskListSimpleResponse" } } } } }
+      }
+    },
+    "/tasks/search": {
+      "get": {
+        "tags": ["Tasks"],
+        "summary": "Search tasks",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [ { "in": "query", "name": "q", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/TaskListSimpleResponse" } } } }, "400": { "description": "Bad Request" } }
+      }
+    },
+    "/tasks/bulk": {
+      "patch": {
+        "tags": ["Tasks"],
+        "summary": "Bulk update tasks",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BulkUpdateRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BulkUpdateResponse" } } } }, "400": { "description": "Bad Request" } }
+      },
+      "delete": {
+        "tags": ["Tasks"],
+        "summary": "Bulk delete tasks",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BulkDeleteRequest" } } } },
+        "responses": { "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/BulkDeleteResponse" } } } }, "400": { "description": "Bad Request" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "username": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "avatar": { "type": "string", "nullable": true },
+          "isActive": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "Task": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "type": "string", "enum": ["todo","in-progress","completed","cancelled"] },
+          "priority": { "type": "string", "enum": ["low","medium","high","urgent"] },
+          "dueDate": { "type": "string", "format": "date-time" },
+          "createdBy": { "$ref": "#/components/schemas/User" },
+          "assignedTo": { "$ref": "#/components/schemas/User" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "category": { "type": "string" },
+          "isArchived": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["username","name","email","password"],
+        "properties": {
+          "username": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "format": "password" }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["identifier","password"],
+        "properties": {
+          "identifier": { "type": "string" },
+          "password": { "type": "string", "format": "password" }
+        }
+      },
+      "RefreshRequest": {
+        "type": "object",
+        "required": ["refreshToken"],
+        "properties": { "refreshToken": { "type": "string" } }
+      },
+      "TaskCreate": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "type": "string" },
+          "priority": { "type": "string" },
+          "dueDate": { "type": "string", "format": "date-time" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "category": { "type": "string" },
+          "estimatedTime": { "type": "number" }
+        }
+      },
+      "TaskUpdate": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "type": "string" },
+          "priority": { "type": "string" },
+          "dueDate": { "type": "string", "format": "date-time" },
+          "startDate": { "type": "string", "format": "date-time" },
+          "assignedTo": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "category": { "type": "string" },
+          "estimatedTime": { "type": "number" },
+          "actualTime": { "type": "number" },
+          "notes": { "type": "string" },
+          "isArchived": { "type": "boolean" }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "user": { "$ref": "#/components/schemas/User" },
+              "token": { "type": "string" },
+              "refreshToken": { "type": "string" }
+            }
+          }
+        }
+      },
+      "TokenOnlyResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "data": { "type": "object", "properties": { "token": { "type": "string" } } }
+        }
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/User" } }
+      },
+      "TaskResponse": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "data": { "$ref": "#/components/schemas/Task" } }
+      },
+      "TaskListResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "count": { "type": "integer" },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "total": { "type": "integer" },
+              "page": { "type": "integer" },
+              "limit": { "type": "integer" },
+              "totalPages": { "type": "integer" },
+              "hasNextPage": { "type": "boolean" },
+              "hasPrevPage": { "type": "boolean" }
+            }
+          },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Task" } }
+        }
+      },
+      "TaskListSimpleResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "count": { "type": "integer" },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/Task" } }
+        }
+      },
+      "StatsResponse": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "data": { "type": "object" } }
+      },
+      "DeleteResponse": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "data": { "type": "object", "properties": { "message": { "type": "string" } } } }
+      },
+      "BulkUpdateRequest": {
+        "type": "object",
+        "required": ["taskIds","updates"],
+        "properties": {
+          "taskIds": { "type": "array", "items": { "type": "string" } },
+          "updates": { "type": "object" }
+        }
+      },
+      "BulkUpdateResponse": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "data": { "type": "object", "properties": { "modifiedCount": { "type": "integer" } } } }
+      },
+      "BulkDeleteRequest": {
+        "type": "object",
+        "required": ["taskIds"],
+        "properties": { "taskIds": { "type": "array", "items": { "type": "string" } } }
+      },
+      "BulkDeleteResponse": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" }, "data": { "type": "object", "properties": { "deletedCount": { "type": "integer" } } } }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": { "type": "string" }
+        }
+      }
+    }
+  }
+}
